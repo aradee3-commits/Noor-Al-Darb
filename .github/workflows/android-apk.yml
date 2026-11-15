@@ -1,3 +1,4 @@
+
 name: Build Noor Al-Darb APK
 
 on:
@@ -30,7 +31,36 @@ jobs:
         run: |
           mkdir -p project
           unzip -q Noor-Al-Darb-Android-Source-for-GitHub.zip -d project
-          find project -name build.gradle.kts -o -name settings.gradle.kts
+
+      - name: Fix Java and Kotlin targets
+        run: |
+          APP_GRADLE=$(find project -path '*/app/build.gradle.kts' -print -quit)
+          python3 - "$APP_GRADLE" <<'PY'
+          import sys
+          from pathlib import Path
+
+          p = Path(sys.argv[1])
+          s = p.read_text()
+
+          marker = '    buildFeatures { compose = true }'
+          patch = '''    compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
+              kotlinOptions {
+                  jvmTarget = "17"
+              }
+
+          '''
+
+          if marker not in s:
+              raise SystemExit("Could not find buildFeatures in app/build.gradle.kts")
+
+          if 'jvmTarget = "17"' not in s:
+              s = s.replace(marker, patch + marker, 1)
+
+          p.write_text(s)
+          PY
 
       - name: Build APK
         run: |
