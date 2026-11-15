@@ -1,4 +1,3 @@
-
 name: Build Noor Al-Darb APK
 
 on:
@@ -22,27 +21,22 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
       - name: Extract project ZIP
         run: |
           mkdir -p project
           unzip -q Noor-Al-Darb-Android-Source-for-GitHub.zip -d project
-          echo "Project files:"
-          find project -maxdepth 5 -type f | sort | head -200
+          find project -name build.gradle.kts -o -name settings.gradle.kts
 
       - name: Build APK
         run: |
-          WRAPPER=$(find project -type f -name gradlew -print -quit)
-
-          if [ -z "$WRAPPER" ]; then
-            echo "ERROR: Gradle wrapper (gradlew) was not found in the ZIP."
-            echo "The project structure needs inspection."
-            exit 1
-          fi
-
-          PROJECT_DIR=$(dirname "$WRAPPER")
-          chmod +x "$WRAPPER"
+          PROJECT_DIR=$(find project -name settings.gradle.kts -print -quit | xargs dirname)
           cd "$PROJECT_DIR"
-          ./gradlew --no-daemon assembleDebug
+          gradle --no-daemon assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
