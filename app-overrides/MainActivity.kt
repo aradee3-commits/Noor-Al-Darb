@@ -8,6 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,6 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -108,22 +111,18 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun NoorHome(
-    episodes: List<Episode>, loading: Boolean, message: String, player: MediaController?,
-    onRefresh: () -> Unit, onPlay: (Episode) -> Unit
-) {
+private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String, player: MediaController?, onRefresh: () -> Unit, onPlay: (Episode) -> Unit) {
     var selected by remember(episodes) { mutableStateOf(episodes.firstOrNull()) }
     var position by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(0L) }
     var playing by remember { mutableStateOf(false) }
     var slider by remember { mutableFloatStateOf(0f) }
     var dragging by remember { mutableStateOf(false) }
+    var showIndex by remember { mutableStateOf(false) }
+    var showFavorites by remember { mutableStateOf(false) }
+    val favorites = remember { mutableStateListOf<String>() }
 
-    LaunchedEffect(Unit) {
-        // The bundled JSON is only a tiny offline fallback. Fetch the full approved catalog.
-        if (episodes.size <= 2) onRefresh()
-    }
-
+    LaunchedEffect(Unit) { if (episodes.size <= 2) onRefresh() }
     LaunchedEffect(player) {
         while (true) {
             if (player != null) {
@@ -139,77 +138,106 @@ private fun NoorHome(
 
     MaterialTheme(colorScheme = darkColorScheme(primary = Gold, background = DeepGreen, surface = Color(0xFF174A3D))) {
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-            Column(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF092820), DeepGreen, Color(0xFF1A493B))))
-                .padding(horizontal = 16.dp, vertical = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Spacer(Modifier.height(8.dp))
-                Text("۞", color = Gold, fontSize = 26.sp)
-                Text("نور على الدرب", color = SoftGold, fontSize = 30.sp, fontWeight = FontWeight.Bold)
-                Text("فضيلة الشيخ صالح بن محمد اللحيدان رحمه الله", color = Color.White, fontSize = 14.sp)
-                Spacer(Modifier.height(14.dp))
-
-                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xE61B5142)),
-                    shape = RoundedCornerShape(22.dp), elevation = CardDefaults.cardElevation(5.dp)) {
-                    Column(Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("المشغل الصوتي", color = Gold, fontSize = 14.sp)
-                        Spacer(Modifier.height(6.dp))
-                        Text(selected?.title ?: "اختر حلقة من الفهرس", color = Color.White, fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, maxLines = 2)
-                        Slider(value = slider.coerceIn(0f, duration.coerceAtLeast(1L).toFloat()),
-                            onValueChange = { dragging = true; slider = it },
-                            onValueChangeFinished = { player?.seekTo(slider.toLong()); dragging = false },
-                            valueRange = 0f..duration.coerceAtLeast(1L).toFloat(),
-                            enabled = player != null && duration > 0,
-                            colors = SliderDefaults.colors(thumbColor = SoftGold, activeTrackColor = Gold, inactiveTrackColor = Color(0xFF668477)))
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(timeText(duration), color = SoftGold, fontSize = 11.sp)
-                            Text(timeText(position), color = SoftGold, fontSize = 11.sp)
-                        }
-                        Spacer(Modifier.height(5.dp))
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
-                            OutlinedButton(onClick = { player?.seekToPreviousMediaItem() }, enabled = player?.hasPreviousMediaItem() == true,
-                                contentPadding = PaddingValues(horizontal = 8.dp), colors = ButtonDefaults.outlinedButtonColors(contentColor = SoftGold)) { Text("السابق", fontSize = 11.sp) }
-                            FilledTonalButton(onClick = { player?.seekTo((player.currentPosition - 15000L).coerceAtLeast(0L)) }, enabled = player != null,
-                                contentPadding = PaddingValues(horizontal = 8.dp)) { Text("−15 ث", fontSize = 11.sp) }
-                            Button(onClick = { player?.let { if (it.isPlaying) it.pause() else it.play() } }, enabled = player != null,
-                                contentPadding = PaddingValues(horizontal = 12.dp), colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = DeepGreen)) {
-                                Text(if (playing) "إيقاف" else "تشغيل", fontWeight = FontWeight.Bold)
+            BoxWithConstraints(Modifier.fillMaxSize().background(DeepGreen)) {
+                Image(painter = painterResource(id = R.drawable.app_background), contentDescription = null,
+                    modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                Column(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * 0.435f)
+                    .fillMaxWidth(0.90f).background(Color(0xEE063A2B), RoundedCornerShape(14.dp))
+                    .padding(horizontal = 10.dp, vertical = 5.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(selected?.title ?: "اختر حلقة من الفهرس", color = SoftGold, fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, maxLines = 2)
+                    if (loading) Text("جارٍ تحديث الفهرس...", color = Color.White, fontSize = 10.sp)
+                }
+                Column(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * 0.545f)
+                    .fillMaxWidth(0.94f).background(Color(0xEE063A2B), RoundedCornerShape(18.dp))
+                    .padding(horizontal = 12.dp, vertical = 4.dp)) {
+                    Slider(value = slider.coerceIn(0f, duration.coerceAtLeast(1L).toFloat()),
+                        onValueChange = { dragging = true; slider = it },
+                        onValueChangeFinished = { player?.seekTo(slider.toLong()); dragging = false },
+                        valueRange = 0f..duration.coerceAtLeast(1L).toFloat(), enabled = player != null && duration > 0,
+                        colors = SliderDefaults.colors(thumbColor = SoftGold, activeTrackColor = Gold, inactiveTrackColor = Color.LightGray))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(timeText(position), color = Color.White, fontSize = 12.sp)
+                        Text(timeText(duration), color = Color.White, fontSize = 12.sp)
+                    }
+                }
+                Row(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * 0.665f).fillMaxWidth(0.96f),
+                    horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+                    RoundControl("⏪", "15 ثانية\nرجوع", { player?.seekTo((player.currentPosition - 15000L).coerceAtLeast(0L)) }, player != null)
+                    RoundControl("|◀", "السابق", { player?.seekToPreviousMediaItem() }, player?.hasPreviousMediaItem() == true)
+                    RoundControl(if (playing) "Ⅱ" else "▶", if (playing) "إيقاف" else "تشغيل",
+                        { player?.let { if (it.isPlaying) it.pause() else it.play() } }, player != null, true)
+                    RoundControl("▶|", "التالي", { player?.seekToNextMediaItem() }, player?.hasNextMediaItem() == true)
+                    RoundControl("⏩", "15 ثانية\nتقديم", { player?.seekTo((player.currentPosition + 15000L).coerceAtMost(duration.takeIf { it > 0 } ?: Long.MAX_VALUE)) }, player != null)
+                }
+                Row(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * 0.815f).fillMaxWidth(0.94f),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    ActionButton("المفضلة", "★", Modifier.weight(1f)) { showFavorites = true }
+                    ActionButton("تحديث", "↓", Modifier.weight(1f), enabled = !loading, onClick = onRefresh)
+                    ActionButton("الفهرس", "☷", Modifier.weight(1f)) { showIndex = true }
+                }
+                Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(bottom = 5.dp, start = 22.dp, end = 22.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("اللهم اجعل هذا العمل صدقة جارية لي ولوالدي ولأهل بيتي", color = SoftGold,
+                        fontSize = 12.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, maxLines = 2)
+                    Text("الفقير إلى الله / محمد فريج البلوي", color = Color(0xFFD8C58C), fontSize = 8.sp, textAlign = TextAlign.Center)
+                }
+                if (message.isNotBlank()) Text(message, color = Color.White, fontSize = 10.sp, textAlign = TextAlign.Center,
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 48.dp)
+                        .background(Color(0xEE063A2B), RoundedCornerShape(8.dp)).padding(5.dp))
+                if (showIndex || showFavorites) {
+                    val shown = if (showFavorites) episodes.filter { favorites.contains(it.id) } else episodes
+                    Dialog(onDismissRequest = { showIndex = false; showFavorites = false }) {
+                        Surface(shape = RoundedCornerShape(20.dp), color = DeepGreen, modifier = Modifier.fillMaxWidth().fillMaxHeight(0.78f)) {
+                            Column(Modifier.padding(14.dp)) {
+                                Text(if (showFavorites) "الحلقات المفضلة" else "فهرس الحلقات (\${episodes.size})",
+                                    color = SoftGold, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    TextButton(onClick = onRefresh, enabled = !loading) { Text(if (loading) "جارٍ التحديث" else "تحديث القائمة", color = Gold) }
+                                    TextButton(onClick = { showFavorites = false; showIndex = false }) { Text("إغلاق", color = Gold) }
+                                }
+                                LazyColumn(Modifier.weight(1f)) {
+                                    items(shown, key = { it.id }) { ep ->
+                                        Row(Modifier.fillMaxWidth().clickable { selected = ep; onPlay(ep); showIndex = false; showFavorites = false }
+                                            .padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Text("\${ep.order}. \${ep.title}", color = Color.White, modifier = Modifier.weight(1f), fontSize = 14.sp)
+                                            TextButton(onClick = { if (favorites.contains(ep.id)) favorites.remove(ep.id) else favorites.add(ep.id) }) {
+                                                Text(if (favorites.contains(ep.id)) "★" else "☆", color = Gold, fontSize = 20.sp)
+                                            }
+                                        }
+                                        HorizontalDivider(color = Color(0x557D9D82))
+                                    }
+                                }
+                                if (shown.isEmpty()) Text(if (showFavorites) "لم تضف حلقات للمفضلة بعد" else "لا توجد حلقات", color = Color.White)
                             }
-                            FilledTonalButton(onClick = { player?.seekTo((player.currentPosition + 15000L).coerceAtMost(duration.takeIf { it > 0 } ?: Long.MAX_VALUE)) }, enabled = player != null,
-                                contentPadding = PaddingValues(horizontal = 8.dp)) { Text("+15 ث", fontSize = 11.sp) }
-                            OutlinedButton(onClick = { player?.seekToNextMediaItem() }, enabled = player?.hasNextMediaItem() == true,
-                                contentPadding = PaddingValues(horizontal = 8.dp), colors = ButtonDefaults.outlinedButtonColors(contentColor = SoftGold)) { Text("التالي", fontSize = 11.sp) }
                         }
-                        Text("اسحب الشريط للتقديم أو الرجوع", color = Color.LightGray, fontSize = 11.sp)
                     }
                 }
-
-                Spacer(Modifier.height(12.dp))
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("فهرس الحلقات (${episodes.size})", color = SoftGold, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                    Button(onClick = onRefresh, enabled = !loading,
-                        colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = DeepGreen)) {
-                        Text(if (loading) "جارٍ التحديث" else "تحديث الفهرس")
-                    }
-                }
-                Text(message, color = Color.LightGray, fontSize = 11.sp, modifier = Modifier.fillMaxWidth())
-                if (episodes.isEmpty()) Text("لم يتم تحميل الفهرس بعد؛ اضغط تحديث الفهرس", color = Color.White, modifier = Modifier.padding(10.dp))
-                LazyColumn(Modifier.weight(1f).fillMaxWidth()) {
-                    items(episodes, key = { it.id }) { ep ->
-                        TextButton(onClick = { selected = ep; onPlay(ep) }, modifier = Modifier.fillMaxWidth()) {
-                            Text("${ep.order}.  ${ep.title}", color = if (selected?.id == ep.id) SoftGold else Color.White,
-                                modifier = Modifier.fillMaxWidth(), fontSize = 14.sp, maxLines = 2)
-                        }
-                        HorizontalDivider(color = Color(0x446FA18A), thickness = 0.5.dp)
-                    }
-                }
-                Spacer(Modifier.height(5.dp))
-                Text("اللهم اجعل هذا العمل صدقة جارية لي ولوالدي ولأهل بيتي", color = SoftGold,
-                    fontSize = 13.sp, textAlign = TextAlign.Center)
-                Spacer(Modifier.height(2.dp))
-                Text("الفقير إلى الله / محمد فريج البلوي", color = Color(0xFFB9A777),
-                    fontSize = 8.sp, textAlign = TextAlign.Center)
             }
         }
+    }
+}
+
+@Composable
+private fun RoundControl(symbol: String, label: String, onClick: () -> Unit, enabled: Boolean, large: Boolean = false) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(if (large) 68.dp else 54.dp)) {
+        Surface(onClick = onClick, enabled = enabled, shape = CircleShape,
+            color = if (large) Color(0xFF0A573C) else Color(0xFF075039), contentColor = SoftGold,
+            border = androidx.compose.foundation.BorderStroke(if (large) 3.dp else 2.dp, Gold),
+            shadowElevation = 5.dp, modifier = Modifier.size(if (large) 66.dp else 48.dp)) {
+            Box(contentAlignment = Alignment.Center) { Text(symbol, fontSize = if (large) 29.sp else 19.sp, fontWeight = FontWeight.Bold) }
+        }
+        Text(label, color = Color.White, fontSize = 9.sp, textAlign = TextAlign.Center, lineHeight = 11.sp, maxLines = 2)
+    }
+}
+
+@Composable
+private fun ActionButton(label: String, symbol: String, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
+    OutlinedButton(onClick = onClick, enabled = enabled, modifier = modifier.height(44.dp),
+        shape = RoundedCornerShape(14.dp), border = androidx.compose.foundation.BorderStroke(1.5.dp, Gold),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = SoftGold, containerColor = Color(0xEE063A2B)),
+        contentPadding = PaddingValues(horizontal = 4.dp)) {
+        Text(symbol, color = Gold, fontSize = 18.sp); Spacer(Modifier.width(4.dp)); Text(label, fontSize = 11.sp, maxLines = 1)
     }
 }
 
