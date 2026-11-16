@@ -2,6 +2,7 @@ package org.nooraldarb.app
 
 import android.content.ComponentName
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.lifecycle.lifecycleScope
@@ -44,7 +45,12 @@ class MainActivity : ComponentActivity() {
         controllerFuture = MediaController.Builder(this, token).buildAsync()
         controllerFuture?.addListener({
             try { controller = controllerFuture?.get(); playerState.value = controller }
-            catch (_: Exception) { playerState.value = null }
+            catch (error: Exception) {
+                playerState.value = null
+                runOnUiThread {
+                    Toast.makeText(this, "تعذر الاتصال بمشغل الصوت: ${error.localizedMessage ?: "خطأ غير معروف"}", Toast.LENGTH_LONG).show()
+                }
+            }
         }, Executor { command -> runOnUiThread(command) })
 
         val initialEpisodes = ArchiveCatalog.loadCached(this).ifEmpty { loadEpisodes() }
@@ -68,10 +74,18 @@ class MainActivity : ComponentActivity() {
                     }
                 },
                 onPlay = { episode ->
-                    controller?.apply {
-                        setMediaItem(MediaItem.Builder().setMediaId(episode.id).setUri(episode.audioUrl)
-                            .setMediaMetadata(androidx.media3.common.MediaMetadata.Builder().setTitle(episode.title).build()).build())
-                        prepare(); play()
+                    val activeController = controller
+                    if (activeController == null) {
+                        Toast.makeText(this@MainActivity, "جارٍ الاتصال بمشغل الصوت، حاول بعد لحظة", Toast.LENGTH_LONG).show()
+                    } else {
+                        val playlist = episodes.map { item ->
+                            MediaItem.Builder().setMediaId(item.id).setUri(item.audioUrl)
+                                .setMediaMetadata(androidx.media3.common.MediaMetadata.Builder().setTitle(item.title).build()).build()
+                        }
+                        val startIndex = episodes.indexOfFirst { it.id == episode.id }.coerceAtLeast(0)
+                        activeController.setMediaItems(playlist, startIndex, 0L)
+                        activeController.prepare()
+                        activeController.play()
                     }
                 })
         }
@@ -104,6 +118,11 @@ private fun NoorHome(
     var playing by remember { mutableStateOf(false) }
     var slider by remember { mutableFloatStateOf(0f) }
     var dragging by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        // The bundled JSON is only a tiny offline fallback. Fetch the full approved catalog.
+        if (episodes.size <= 2) onRefresh()
+    }
 
     LaunchedEffect(player) {
         while (true) {
