@@ -40,9 +40,9 @@ jobs:
           cp app-overrides/MainActivity.kt "$APP_DIR/MainActivity.kt"
           cp app-overrides/PlaybackService.kt "$APP_DIR/PlaybackService.kt"
           cp app-overrides/AndroidManifest.xml "$APP_MAIN/AndroidManifest.xml"
-          mkdir -p "$APP_MAIN/res/drawable" "$APP_MAIN/res/drawable-nodpi" "$APP_MAIN/res/mipmap-anydpi-v26" "$APP_MAIN/res/values"
+          mkdir -p "$APP_MAIN/res/drawable" "$APP_MAIN/res/mipmap-anydpi-v26" "$APP_MAIN/res/values"
           cp app-overrides/res/drawable/ic_launcher_foreground.xml "$APP_MAIN/res/drawable/"
-          cp app-overrides/res/drawable-nodpi/app_background.jpg "$APP_MAIN/res/drawable-nodpi/"
+          cp app-overrides/res/drawable/app_background.jpg "$APP_MAIN/res/drawable/"
           cp app-overrides/res/mipmap-anydpi-v26/ic_launcher.xml "$APP_MAIN/res/mipmap-anydpi-v26/"
           cp app-overrides/res/values/ic_launcher_background.xml "$APP_MAIN/res/values/"
 
