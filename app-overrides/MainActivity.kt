@@ -10,10 +10,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,6 +30,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.media3.common.MediaItem
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
@@ -190,7 +193,7 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String,
                     Dialog(onDismissRequest = { showIndex = false; showFavorites = false }) {
                         Surface(shape = RoundedCornerShape(20.dp), color = DeepGreen, modifier = Modifier.fillMaxWidth().fillMaxHeight(0.78f)) {
                             Column(Modifier.padding(14.dp)) {
-                                Text(if (showFavorites) "الحلقات المفضلة" else "فهرس الحلقات (\${episodes.size})",
+                                Text(if (showFavorites) "الحلقات المفضلة" else "فهرس الحلقات (${episodes.size})",
                                     color = SoftGold, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     TextButton(onClick = onRefresh, enabled = !loading) { Text(if (loading) "جارٍ التحديث" else "تحديث القائمة", color = Gold) }
@@ -200,7 +203,7 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String,
                                     items(shown, key = { it.id }) { ep ->
                                         Row(Modifier.fillMaxWidth().clickable { selected = ep; onPlay(ep); showIndex = false; showFavorites = false }
                                             .padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
-                                            Text("\${ep.order}. \${ep.title}", color = Color.White, modifier = Modifier.weight(1f), fontSize = 14.sp)
+                                            Text("${ep.order}. ${ep.title}", color = Color.White, modifier = Modifier.weight(1f), fontSize = 14.sp)
                                             TextButton(onClick = { if (favorites.contains(ep.id)) favorites.remove(ep.id) else favorites.add(ep.id) }) {
                                                 Text(if (favorites.contains(ep.id)) "★" else "☆", color = Gold, fontSize = 20.sp)
                                             }
