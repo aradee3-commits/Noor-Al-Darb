@@ -32,11 +32,18 @@ jobs:
           mkdir -p project
           unzip -q Noor-Al-Darb-Android-Source-for-GitHub.zip -d project
 
-      - name: Apply updated Arabic player screen
+      - name: Apply updated player, audio service, manifest and launcher icon
         run: |
           APP_DIR=$(find project -path '*/app/src/main/java/org/nooraldarb/app' -type d -print -quit)
           test -n "$APP_DIR"
+          APP_MAIN="${APP_DIR%/java/org/nooraldarb/app}"
           cp app-overrides/MainActivity.kt "$APP_DIR/MainActivity.kt"
+          cp app-overrides/PlaybackService.kt "$APP_DIR/PlaybackService.kt"
+          cp app-overrides/AndroidManifest.xml "$APP_MAIN/AndroidManifest.xml"
+          mkdir -p "$APP_MAIN/res/drawable" "$APP_MAIN/res/mipmap-anydpi-v26" "$APP_MAIN/res/values"
+          cp app-overrides/res/drawable/ic_launcher_foreground.xml "$APP_MAIN/res/drawable/"
+          cp app-overrides/res/mipmap-anydpi-v26/ic_launcher.xml "$APP_MAIN/res/mipmap-anydpi-v26/"
+          cp app-overrides/res/values/ic_launcher_background.xml "$APP_MAIN/res/values/"
 
       - name: Upload extracted source for review
         uses: actions/upload-artifact@v4
