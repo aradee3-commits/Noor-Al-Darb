@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - 'Noor-Al-Darb-Android-Source-for-GitHub.zip'
+      - 'app-overrides/**'
       - '.github/workflows/android-apk.yml'
 
 jobs:
@@ -31,6 +32,12 @@ jobs:
           mkdir -p project
           unzip -q Noor-Al-Darb-Android-Source-for-GitHub.zip -d project
 
+      - name: Apply updated Arabic player screen
+        run: |
+          APP_DIR=$(find project -path '*/app/src/main/java/org/nooraldarb/app' -type d -print -quit)
+          test -n "$APP_DIR"
+          cp app-overrides/MainActivity.kt "$APP_DIR/MainActivity.kt"
+
       - name: Upload extracted source for review
         uses: actions/upload-artifact@v4
         with:
@@ -48,7 +55,6 @@ jobs:
 
           p = Path(sys.argv[1])
           s = p.read_text()
-
           marker = '    buildFeatures { compose = true }'
           patch = '''    compileOptions {
                   sourceCompatibility = JavaVersion.VERSION_17
@@ -59,13 +65,10 @@ jobs:
               }
 
           '''
-
           if marker not in s:
               raise SystemExit("Could not find buildFeatures in app/build.gradle.kts")
-
           if 'jvmTarget = "17"' not in s:
               s = s.replace(marker, patch + marker, 1)
-
           p.write_text(s)
           PY
 
