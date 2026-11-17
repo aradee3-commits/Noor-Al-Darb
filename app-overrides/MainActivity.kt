@@ -209,15 +209,15 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String?
                     drawImage(backgroundImage, dstOffset = IntOffset(left, top), dstSize = IntSize(dstW, dstH))
                 }
                 Column(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * 0.435f)
-                    .fillMaxWidth(0.90f).background(Color(0xEE063A2B), RoundedCornerShape(14.dp))
+                    .fillMaxWidth(0.88f).background(Color(0xEE063A2B), RoundedCornerShape(14.dp))
                     .padding(horizontal = 10.dp, vertical = 5.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(selected?.title ?: "اختر حلقة من الفهرس", color = SoftGold, fontSize = 18.sp,
                         fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, maxLines = 2)
                     if (loading) Text("جارٍ تحديث الفهرس...", color = Color.White, fontSize = 10.sp)
                 }
                 Column(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * 0.545f)
-                    .fillMaxWidth(0.94f).background(Color(0xEE063A2B), RoundedCornerShape(18.dp))
-                    .padding(horizontal = 12.dp, vertical = 4.dp)) {
+                    .fillMaxWidth(0.88f).background(Color(0xEE063A2B), RoundedCornerShape(18.dp))
+                    .padding(horizontal = 16.dp, vertical = 7.dp)) {
                     Slider(value = slider.coerceIn(0f, duration.coerceAtLeast(1L).toFloat()),
                         onValueChange = { dragging = true; slider = it },
                         onValueChangeFinished = { player?.seekTo(slider.toLong()); dragging = false },
@@ -228,7 +228,7 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String?
                         Text(timeText(duration), color = Color.White, fontSize = 12.sp)
                     }
                 }
-                Row(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * 0.665f).fillMaxWidth(0.96f),
+                Row(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * 0.665f).fillMaxWidth(0.90f),
                     horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                     RoundControl("⏪", "15 ثانية\nرجوع", { player?.seekTo((player.currentPosition - 15000L).coerceAtLeast(0L)) }, player != null)
                     RoundControl("|◀", "السابق", { player?.seekToPreviousMediaItem() }, player?.hasPreviousMediaItem() == true)
@@ -237,7 +237,7 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String?
                     RoundControl("▶|", "التالي", { player?.seekToNextMediaItem() }, player?.hasNextMediaItem() == true)
                     RoundControl("⏩", "15 ثانية\nتقديم", { player?.seekTo((player.currentPosition + 15000L).coerceAtMost(duration.takeIf { it > 0 } ?: Long.MAX_VALUE)) }, player != null)
                 }
-                Row(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * 0.815f).fillMaxWidth(0.94f),
+                Row(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * 0.815f).fillMaxWidth(0.90f),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     ActionButton("المفضلة", "★", Modifier.weight(1f)) { showFavorites = true }
                     ActionButton("تحديث", "↓", Modifier.weight(1f), enabled = !loading, onClick = onRefresh)
