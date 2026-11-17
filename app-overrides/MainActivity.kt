@@ -1,6 +1,9 @@
 package org.nooraldarb.app
 
 import android.content.ComponentName
+import android.app.DownloadManager
+import android.net.Uri
+import java.io.File
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -85,15 +88,19 @@ class MainActivity : ComponentActivity() {
                 onPlay = { episode ->
                     getSharedPreferences("noor_playback_resume", MODE_PRIVATE).edit()
                         .putString("episode_id", episode.id).putLong("position_ms", 0L).apply()
+                    val startIndex = episodes.indexOfFirst { it.id == episode.id }.coerceAtLeast(0)
+                    // Download this episode and the next four for offline listening.
+                    downloadSmartFive(episodes, startIndex)
                     val activeController = controller
                     if (activeController == null) {
                         Toast.makeText(this@MainActivity, "جارٍ الاتصال بمشغل الصوت، حاول بعد لحظة", Toast.LENGTH_LONG).show()
                     } else {
                         val playlist = episodes.map { item ->
-                            MediaItem.Builder().setMediaId(item.id).setUri(item.audioUrl)
+                            val offlineFile = offlineEpisodeFile(item.id)
+                            val playbackUri = if (offlineFile.isFile && offlineFile.length() > 0L) Uri.fromFile(offlineFile) else Uri.parse(item.audioUrl)
+                            MediaItem.Builder().setMediaId(item.id).setUri(playbackUri)
                                 .setMediaMetadata(androidx.media3.common.MediaMetadata.Builder().setTitle(item.title).build()).build()
                         }
-                        val startIndex = episodes.indexOfFirst { it.id == episode.id }.coerceAtLeast(0)
                         activeController.setMediaItems(playlist, startIndex, 0L)
                         activeController.prepare()
                         activeController.play()
@@ -102,6 +109,43 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun safeEpisodeFileName(id: String): String = id.replace(Regex("[^A-Za-z0-9_-]"), "_")
+
+    private fun offlineEpisodeFile(id: String): File =
+        File(getExternalFilesDir(null), "offline_episodes/" + safeEpisodeFileName(id) + ".audio")
+
+    private fun downloadSmartFive(episodes: List<Episode>, startIndex: Int) {
+        val manager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
+        val directory = File(getExternalFilesDir(null), "offline_episodes")
+        if (!directory.exists()) directory.mkdirs()
+        val prefs = getSharedPreferences("noor_smart_downloads", MODE_PRIVATE)
+        episodes.drop(startIndex).take(5).forEach { episode ->
+            val target = offlineEpisodeFile(episode.id)
+            if (target.isFile && target.length() > 0L) return@forEach
+            val key = "download_" + safeEpisodeFileName(episode.id)
+            val existingId = prefs.getLong(key, -1L)
+            if (existingId >= 0L) {
+                val query = manager.query(DownloadManager.Query().setFilterById(existingId))
+                val stillActive = query.use { it.moveToFirst() &&
+                    it.getInt(it.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS)) in
+                    listOf(DownloadManager.STATUS_PENDING, DownloadManager.STATUS_RUNNING, DownloadManager.STATUS_PAUSED) }
+                if (stillActive) return@forEach
+            }
+            try {
+                val request = DownloadManager.Request(Uri.parse(episode.audioUrl))
+                    .setTitle("نور على الدرب")
+                    .setDescription("تحميل الحلقة " + episode.id + " للاستماع دون إنترنت")
+                    .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
+                    .setAllowedOverMetered(true)
+                    .setAllowedOverRoaming(false)
+                    .setDestinationUri(Uri.fromFile(target))
+                val id = manager.enqueue(request)
+                prefs.edit().putLong(key, id).apply()
+            } catch (_: Exception) {
+                // Streaming remains available if the offline download cannot be queued.
+            }
+        }
+    }
     private fun loadEpisodes(): List<Episode> = try {
         val json = assets.open("episodes.json").bufferedReader().use { it.readText() }
         val array = org.json.JSONObject(json).getJSONArray("episodes")
@@ -153,7 +197,9 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String?
             val index = if (savedIndex >= 0) savedIndex else 0
             val savedPosition = if (savedIndex >= 0) prefs.getLong("position_ms", 0L).coerceAtLeast(0L) else 0L
             val playlist = episodes.map { item ->
-                MediaItem.Builder().setMediaId(item.id).setUri(item.audioUrl)
+                val offlineFile = File(context.getExternalFilesDir(null), "offline_episodes/" + safeEpisodeFileName(item.id) + ".audio")
+                val playbackUri = if (offlineFile.isFile && offlineFile.length() > 0L) Uri.fromFile(offlineFile) else Uri.parse(item.audioUrl)
+                MediaItem.Builder().setMediaId(item.id).setUri(playbackUri)
                     .setMediaMetadata(androidx.media3.common.MediaMetadata.Builder().setTitle(item.title).build()).build()
             }
             player.setMediaItems(playlist, index, savedPosition)
