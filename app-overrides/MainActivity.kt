@@ -197,6 +197,11 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String?
     MaterialTheme(colorScheme = darkColorScheme(primary = Gold, background = DeepGreen, surface = Color(0xFF174A3D))) {
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             BoxWithConstraints(Modifier.fillMaxSize().background(DeepGreen)) {
+                // Landscape layout follows the safe inner width of the approved gold frame.
+                // Keep portrait sizing unchanged; only tighten the player panels in landscape.
+                val isLandscape = maxWidth > maxHeight
+                val playerPanelWidth = if (isLandscape) 0.82f else 0.88f
+                val controlsRowWidth = if (isLandscape) 0.86f else 0.90f
                 Canvas(Modifier.fillMaxSize()) {
                     // Draw the approved artwork as one intact image: no arbitrary source crops
                     // and no independent horizontal/vertical stretching of the title or frame.
@@ -209,14 +214,14 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String?
                     drawImage(backgroundImage, dstOffset = IntOffset(left, top), dstSize = IntSize(dstW, dstH))
                 }
                 Column(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * 0.435f)
-                    .fillMaxWidth(0.88f).background(Color(0xEE063A2B), RoundedCornerShape(14.dp))
+                    .fillMaxWidth(playerPanelWidth).background(Color(0xEE063A2B), RoundedCornerShape(14.dp))
                     .padding(horizontal = 10.dp, vertical = 5.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(selected?.title ?: "اختر حلقة من الفهرس", color = SoftGold, fontSize = 18.sp,
                         fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, maxLines = 2)
                     if (loading) Text("جارٍ تحديث الفهرس...", color = Color.White, fontSize = 10.sp)
                 }
                 Column(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * 0.545f)
-                    .fillMaxWidth(0.88f).background(Color(0xEE063A2B), RoundedCornerShape(18.dp))
+                    .fillMaxWidth(playerPanelWidth).background(Color(0xEE063A2B), RoundedCornerShape(18.dp))
                     .padding(horizontal = 16.dp, vertical = 7.dp)) {
                     Slider(value = slider.coerceIn(0f, duration.coerceAtLeast(1L).toFloat()),
                         onValueChange = { dragging = true; slider = it },
@@ -228,7 +233,7 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String?
                         Text(timeText(duration), color = Color.White, fontSize = 12.sp)
                     }
                 }
-                Row(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * 0.665f).fillMaxWidth(0.90f),
+                Row(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * 0.665f).fillMaxWidth(controlsRowWidth),
                     horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                     RoundControl("⏪", "15 ثانية\nرجوع", { player?.seekTo((player.currentPosition - 15000L).coerceAtLeast(0L)) }, player != null)
                     RoundControl("|◀", "السابق", { player?.seekToPreviousMediaItem() }, player?.hasPreviousMediaItem() == true)
