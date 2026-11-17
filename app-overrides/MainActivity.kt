@@ -294,11 +294,16 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String?
                     ActionButton("تحديث", "↓", Modifier.weight(1f), enabled = !loading, onClick = onRefresh)
                     ActionButton("الفهرس", "☷", Modifier.weight(1f)) { showIndex = true }
                 }
-                Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(bottom = 5.dp, start = 22.dp, end = 22.dp),
+                // A single opaque footer masks the duplicate wording embedded in the background artwork.
+                Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth(0.76f)
+                    .padding(bottom = 5.dp)
+                    .background(Color(0xF20B3028), RoundedCornerShape(8.dp))
+                    .padding(horizontal = 8.dp, vertical = 3.dp),
                     horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("اللهم اجعل هذا العمل صدقة جارية لي ولوالدي ولأهل بيتي", color = SoftGold,
-                        fontSize = 8.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center, maxLines = 1)
-                    Text("الفقير إلى الله / محمد فريج البلوي", color = Color(0xFFD8C58C), fontSize = 6.sp, textAlign = TextAlign.Center)
+                        fontSize = 9.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center, maxLines = 1)
+                    Text("الفقير إلى الله / محمد فريج البلوي", color = Color(0xFFD8C58C),
+                        fontSize = 5.sp, textAlign = TextAlign.Center, maxLines = 1)
                 }
                 if (message != null) Text(message, color = SoftGold, fontSize = 10.sp, textAlign = TextAlign.Center,
                     modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 48.dp)
