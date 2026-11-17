@@ -46,6 +46,8 @@ private val DeepGreen = Color(0xFF0B3028)
 private val Gold = Color(0xFFD8B96E)
 private val SoftGold = Color(0xFFF0DDAA)
 
+private fun safeEpisodeFileName(id: String): String = id.replace(Regex("[^A-Za-z0-9_-]"), "_")
+
 class MainActivity : ComponentActivity() {
     private var controller: MediaController? = null
     private var controllerFuture: com.google.common.util.concurrent.ListenableFuture<MediaController>? = null
@@ -109,8 +111,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun safeEpisodeFileName(id: String): String = id.replace(Regex("[^A-Za-z0-9_-]"), "_")
-
     private fun offlineEpisodeFile(id: String): File =
         File(getExternalFilesDir(null), "offline_episodes/" + safeEpisodeFileName(id) + ".audio")
 
@@ -138,7 +138,7 @@ class MainActivity : ComponentActivity() {
                     .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
                     .setAllowedOverMetered(true)
                     .setAllowedOverRoaming(false)
-                    .setDestinationUri(Uri.fromFile(target))
+                    .setDestinationInExternalFilesDir(this, null, "offline_episodes/" + target.name)
                 val id = manager.enqueue(request)
                 prefs.edit().putLong(key, id).apply()
             } catch (_: Exception) {
