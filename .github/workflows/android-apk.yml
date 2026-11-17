@@ -7,6 +7,7 @@ on:
       - 'Noor-Al-Darb-Android-Source-for-GitHub.zip'
       - 'app-overrides/**'
       - '.github/workflows/android-apk.yml'
+      - 'README.md'
 
 jobs:
   build:
