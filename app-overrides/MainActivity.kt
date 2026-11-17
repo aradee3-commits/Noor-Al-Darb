@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -246,8 +247,10 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String?
                 // Landscape layout follows the safe inner width of the approved gold frame.
                 // Keep portrait sizing unchanged; only tighten the player panels in landscape.
                 val isLandscape = maxWidth > maxHeight
-                val playerPanelWidth = if (isLandscape) 0.82f else 0.88f
-                val controlsRowWidth = if (isLandscape) 0.86f else 0.90f
+                val isPhone = LocalConfiguration.current.smallestScreenWidthDp < 600
+                val isPhoneLandscape = isPhone && isLandscape
+                val playerPanelWidth = when { isPhoneLandscape -> 0.94f; isLandscape -> 0.82f; else -> 0.88f }
+                val controlsRowWidth = when { isPhoneLandscape -> 0.98f; isLandscape -> 0.86f; else -> 0.90f }
                 Canvas(Modifier.fillMaxSize()) {
                     // Draw the approved artwork as one intact image: no arbitrary source crops
                     // and no independent horizontal/vertical stretching of the title or frame.
@@ -259,14 +262,14 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String?
                     val top = ((size.height - dstH) / 2f).toInt()
                     drawImage(backgroundImage, dstOffset = IntOffset(left, top), dstSize = IntSize(dstW, dstH))
                 }
-                Column(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * (if (isLandscape) 0.405f else 0.435f))
+                Column(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * (when { isPhoneLandscape -> 0.07f; isLandscape -> 0.405f; else -> 0.435f }))
                     .fillMaxWidth(playerPanelWidth).background(Color(0xEE063A2B), RoundedCornerShape(14.dp))
                     .padding(horizontal = 10.dp, vertical = 5.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(selected?.title ?: "اختر حلقة من الفهرس", color = SoftGold, fontSize = 18.sp,
+                    Text(selected?.title ?: "اختر حلقة من الفهرس", color = SoftGold, fontSize = if (isPhoneLandscape) 14.sp else 18.sp,
                         fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, maxLines = 2)
                     if (loading) Text("جارٍ تحديث الفهرس...", color = Color.White, fontSize = 10.sp)
                 }
-                Column(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * (if (isLandscape) 0.505f else 0.545f))
+                Column(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * (when { isPhoneLandscape -> 0.22f; isLandscape -> 0.505f; else -> 0.545f }))
                     .fillMaxWidth(playerPanelWidth).background(Color(0xEE063A2B), RoundedCornerShape(18.dp))
                     .padding(horizontal = 16.dp, vertical = 7.dp)) {
                     Slider(value = slider.coerceIn(0f, duration.coerceAtLeast(1L).toFloat()),
@@ -279,16 +282,16 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String?
                         Text(timeText(duration), color = Color.White, fontSize = 12.sp)
                     }
                 }
-                Row(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * (if (isLandscape) 0.565f else 0.665f)).fillMaxWidth(controlsRowWidth),
+                Row(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * (when { isPhoneLandscape -> 0.49f; isLandscape -> 0.565f; else -> 0.665f })).fillMaxWidth(controlsRowWidth),
                     horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
-                    RoundControl("⏪", "15 ثانية\nرجوع", { player?.seekTo((player.currentPosition - 15000L).coerceAtLeast(0L)) }, player != null)
-                    RoundControl("|◀", "السابق", { player?.seekToPreviousMediaItem() }, player?.hasPreviousMediaItem() == true)
+                    RoundControl("⏪", "15 ثانية\nرجوع", { player?.seekTo((player.currentPosition - 15000L).coerceAtLeast(0L)) }, player != null, compact = isPhoneLandscape)
+                    RoundControl("|◀", "السابق", { player?.seekToPreviousMediaItem() }, player?.hasPreviousMediaItem() == true, compact = isPhoneLandscape)
                     RoundControl(if (playing) "Ⅱ" else "▶", if (playing) "إيقاف" else "تشغيل",
-                        { player?.let { if (it.isPlaying) it.pause() else it.play() } }, player != null, true)
-                    RoundControl("▶|", "التالي", { player?.seekToNextMediaItem() }, player?.hasNextMediaItem() == true)
-                    RoundControl("⏩", "15 ثانية\nتقديم", { player?.seekTo((player.currentPosition + 15000L).coerceAtMost(duration.takeIf { it > 0 } ?: Long.MAX_VALUE)) }, player != null)
+                        { player?.let { if (it.isPlaying) it.pause() else it.play() } }, player != null, true, compact = isPhoneLandscape)
+                    RoundControl("▶|", "التالي", { player?.seekToNextMediaItem() }, player?.hasNextMediaItem() == true, compact = isPhoneLandscape)
+                    RoundControl("⏩", "15 ثانية\nتقديم", { player?.seekTo((player.currentPosition + 15000L).coerceAtMost(duration.takeIf { it > 0 } ?: Long.MAX_VALUE)) }, player != null, compact = isPhoneLandscape)
                 }
-                Row(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * (if (isLandscape) 0.815f else 0.785f)).fillMaxWidth(0.90f),
+                Row(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * (when { isPhoneLandscape -> 0.82f; isLandscape -> 0.815f; else -> 0.785f })).fillMaxWidth(if (isPhoneLandscape) 0.96f else 0.90f),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     ActionButton("المفضلة", "★", Modifier.weight(1f), compact = isLandscape) { showFavorites = true }
                     ActionButton("تحديث", "↓", Modifier.weight(1f), enabled = !loading, compact = isLandscape, onClick = onRefresh)
@@ -331,16 +334,16 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String?
 }
 
 @Composable
-private fun RoundControl(symbol: String, label: String, onClick: () -> Unit, enabled: Boolean, large: Boolean = false) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(if (large) 74.dp else 64.dp)) {
+private fun RoundControl(symbol: String, label: String, onClick: () -> Unit, enabled: Boolean, large: Boolean = false, compact: Boolean = false) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(when { compact && large -> 56.dp; compact -> 48.dp; large -> 74.dp; else -> 64.dp })) {
         Surface(onClick = onClick, enabled = enabled, shape = CircleShape,
             color = if (large) Color(0xFF0A573C) else Color(0xFF075039), contentColor = SoftGold,
             border = androidx.compose.foundation.BorderStroke(if (large) 3.dp else 2.dp, Gold),
-            shadowElevation = 5.dp, modifier = Modifier.size(if (large) 78.dp else 60.dp)) {
-            Box(contentAlignment = Alignment.Center) { Text(symbol, fontSize = if (large) 36.sp else 25.sp, fontWeight = FontWeight.Bold) }
+            shadowElevation = 5.dp, modifier = Modifier.size(when { compact && large -> 56.dp; compact -> 44.dp; large -> 78.dp; else -> 60.dp })) {
+            Box(contentAlignment = Alignment.Center) { Text(symbol, fontSize = when { compact && large -> 28.sp; compact -> 19.sp; large -> 36.sp; else -> 25.sp }, fontWeight = FontWeight.Bold) }
         }
-        Text(label, color = DeepGreen, fontSize = 10.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
-            lineHeight = 11.sp, maxLines = 2, modifier = Modifier.padding(top = 2.dp)
+        Text(label, color = DeepGreen, fontSize = if (compact) 8.sp else 10.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
+            lineHeight = if (compact) 9.sp else 11.sp, maxLines = 2, modifier = Modifier.padding(top = 2.dp)
                 .background(Color(0xDDF5E8C6), RoundedCornerShape(5.dp)).padding(horizontal = 3.dp, vertical = 2.dp))
     }
 }
