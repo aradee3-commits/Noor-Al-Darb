@@ -259,14 +259,14 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String?
                     val top = ((size.height - dstH) / 2f).toInt()
                     drawImage(backgroundImage, dstOffset = IntOffset(left, top), dstSize = IntSize(dstW, dstH))
                 }
-                Column(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * 0.435f)
+                Column(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * (if (isLandscape) 0.405f else 0.435f))
                     .fillMaxWidth(playerPanelWidth).background(Color(0xEE063A2B), RoundedCornerShape(14.dp))
                     .padding(horizontal = 10.dp, vertical = 5.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(selected?.title ?: "اختر حلقة من الفهرس", color = SoftGold, fontSize = 18.sp,
                         fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, maxLines = 2)
                     if (loading) Text("جارٍ تحديث الفهرس...", color = Color.White, fontSize = 10.sp)
                 }
-                Column(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * 0.545f)
+                Column(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * (if (isLandscape) 0.505f else 0.545f))
                     .fillMaxWidth(playerPanelWidth).background(Color(0xEE063A2B), RoundedCornerShape(18.dp))
                     .padding(horizontal = 16.dp, vertical = 7.dp)) {
                     Slider(value = slider.coerceIn(0f, duration.coerceAtLeast(1L).toFloat()),
@@ -279,7 +279,7 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String?
                         Text(timeText(duration), color = Color.White, fontSize = 12.sp)
                     }
                 }
-                Row(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * 0.665f).fillMaxWidth(controlsRowWidth),
+                Row(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * (if (isLandscape) 0.605f else 0.665f)).fillMaxWidth(controlsRowWidth),
                     horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                     RoundControl("⏪", "15 ثانية\nرجوع", { player?.seekTo((player.currentPosition - 15000L).coerceAtLeast(0L)) }, player != null)
                     RoundControl("|◀", "السابق", { player?.seekToPreviousMediaItem() }, player?.hasPreviousMediaItem() == true)
@@ -288,11 +288,11 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String?
                     RoundControl("▶|", "التالي", { player?.seekToNextMediaItem() }, player?.hasNextMediaItem() == true)
                     RoundControl("⏩", "15 ثانية\nتقديم", { player?.seekTo((player.currentPosition + 15000L).coerceAtMost(duration.takeIf { it > 0 } ?: Long.MAX_VALUE)) }, player != null)
                 }
-                Row(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * 0.785f).fillMaxWidth(0.90f),
+                Row(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * (if (isLandscape) 0.765f else 0.785f)).fillMaxWidth(0.90f),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    ActionButton("المفضلة", "★", Modifier.weight(1f)) { showFavorites = true }
-                    ActionButton("تحديث", "↓", Modifier.weight(1f), enabled = !loading, onClick = onRefresh)
-                    ActionButton("الفهرس", "☷", Modifier.weight(1f)) { showIndex = true }
+                    ActionButton("المفضلة", "★", Modifier.weight(1f), compact = isLandscape) { showFavorites = true }
+                    ActionButton("تحديث", "↓", Modifier.weight(1f), enabled = !loading, compact = isLandscape, onClick = onRefresh)
+                    ActionButton("الفهرس", "☷", Modifier.weight(1f), compact = isLandscape) { showIndex = true }
                 }
                 // Keep the dedication printed in the background; add only the donor name beneath it.
                 Text("الفقير إلى الله / محمد فريج البلوي", color = Color(0xFFD8C58C),
@@ -352,12 +352,12 @@ private fun RoundControl(symbol: String, label: String, onClick: () -> Unit, ena
 }
 
 @Composable
-private fun ActionButton(label: String, symbol: String, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
-    OutlinedButton(onClick = onClick, enabled = enabled, modifier = modifier.height(54.dp),
+private fun ActionButton(label: String, symbol: String, modifier: Modifier = Modifier, enabled: Boolean = true, compact: Boolean = false, onClick: () -> Unit) {
+    OutlinedButton(onClick = onClick, enabled = enabled, modifier = modifier.height(if (compact) 38.dp else 54.dp),
         shape = RoundedCornerShape(14.dp), border = androidx.compose.foundation.BorderStroke(1.5.dp, Gold),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = SoftGold, containerColor = Color(0xEE063A2B)),
         contentPadding = PaddingValues(horizontal = 4.dp)) {
-        Text(symbol, color = Gold, fontSize = 23.sp); Spacer(Modifier.width(5.dp)); Text(label, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+        Text(symbol, color = Gold, fontSize = if (compact) 17.sp else 23.sp); Spacer(Modifier.width(if (compact) 3.dp else 5.dp)); Text(label, fontSize = if (compact) 10.sp else 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
     }
 }
 
