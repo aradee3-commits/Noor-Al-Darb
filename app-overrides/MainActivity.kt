@@ -8,7 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -20,14 +20,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -63,7 +65,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             var episodes by remember { mutableStateOf(initialEpisodes) }
             var loading by remember { mutableStateOf(false) }
-            var message by remember { mutableStateOf("يمكن تحديث فهرس الحلقات من أرشيف الإنترنت") }
+            var message by remember { mutableStateOf<String?>(null) }
             NoorHome(episodes, loading, message, playerState.value,
                 onRefresh = {
                     if (!loading) {
@@ -93,7 +95,7 @@ class MainActivity : ComponentActivity() {
                         activeController.prepare()
                         activeController.play()
                     }
-                })
+                }, onStatusExpired = { message = null })
         }
     }
 
@@ -114,7 +116,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String, player: MediaController?, onRefresh: () -> Unit, onPlay: (Episode) -> Unit) {
+private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String?, player: MediaController?, onRefresh: () -> Unit, onPlay: (Episode) -> Unit, onStatusExpired: () -> Unit) {
     var selected by remember(episodes) { mutableStateOf(episodes.firstOrNull()) }
     var position by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(0L) }
@@ -124,6 +126,8 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String,
     var showIndex by remember { mutableStateOf(false) }
     var showFavorites by remember { mutableStateOf(false) }
     val favorites = remember { mutableStateListOf<String>() }
+    val backgroundImage = ImageBitmap.imageResource(R.drawable.app_background)
+    LaunchedEffect(message) { if (message != null) { delay(2600); onStatusExpired() } }
 
     LaunchedEffect(Unit) { if (episodes.size <= 2) onRefresh() }
     LaunchedEffect(player) {
@@ -142,8 +146,21 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String,
     MaterialTheme(colorScheme = darkColorScheme(primary = Gold, background = DeepGreen, surface = Color(0xFF174A3D))) {
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             BoxWithConstraints(Modifier.fillMaxSize().background(DeepGreen)) {
-                Image(painter = painterResource(id = R.drawable.app_background), contentDescription = null,
-                    modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                Canvas(Modifier.fillMaxSize()) {
+                    // Portrait composition: keep the complete heading visible on phone screens.
+                    val w = size.width.toInt().coerceAtLeast(1)
+                    val topH = (size.height * 0.215f).toInt()
+                    val footerY = (size.height * 0.91f).toInt()
+                    drawRect(Color(0xFFFFF2D2))
+                    drawImage(backgroundImage, srcOffset = IntOffset(360, 0), srcSize = IntSize(950, 292),
+                        dstOffset = IntOffset(0, 0), dstSize = IntSize(w, topH))
+                    drawImage(backgroundImage, srcOffset = IntOffset(430, 275), srcSize = IntSize(810, 485),
+                        dstOffset = IntOffset(0, topH), dstSize = IntSize(w, (footerY - topH).coerceAtLeast(1)))
+                    drawRect(DeepGreen, topLeft = androidx.compose.ui.geometry.Offset(0f, footerY.toFloat()),
+                        size = androidx.compose.ui.geometry.Size(size.width, size.height - footerY))
+                    drawLine(Gold, androidx.compose.ui.geometry.Offset(0f, footerY.toFloat()),
+                        androidx.compose.ui.geometry.Offset(size.width, footerY.toFloat()), strokeWidth = 3.dp.toPx())
+                }
                 Column(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * 0.435f)
                     .fillMaxWidth(0.90f).background(Color(0xEE063A2B), RoundedCornerShape(14.dp))
                     .padding(horizontal = 10.dp, vertical = 5.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -182,12 +199,12 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String,
                 Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(bottom = 5.dp, start = 22.dp, end = 22.dp),
                     horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("اللهم اجعل هذا العمل صدقة جارية لي ولوالدي ولأهل بيتي", color = SoftGold,
-                        fontSize = 12.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, maxLines = 2)
-                    Text("الفقير إلى الله / محمد فريج البلوي", color = Color(0xFFD8C58C), fontSize = 8.sp, textAlign = TextAlign.Center)
+                        fontSize = 8.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center, maxLines = 1)
+                    Text("الفقير إلى الله / محمد فريج البلوي", color = Color(0xFFD8C58C), fontSize = 6.sp, textAlign = TextAlign.Center)
                 }
-                if (message.isNotBlank()) Text(message, color = Color.White, fontSize = 10.sp, textAlign = TextAlign.Center,
+                if (message != null) Text(message, color = SoftGold, fontSize = 10.sp, textAlign = TextAlign.Center,
                     modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 48.dp)
-                        .background(Color(0xEE063A2B), RoundedCornerShape(8.dp)).padding(5.dp))
+                        .background(DeepGreen, RoundedCornerShape(8.dp)).padding(horizontal = 9.dp, vertical = 6.dp))
                 if (showIndex || showFavorites) {
                     val shown = if (showFavorites) episodes.filter { favorites.contains(it.id) } else episodes
                     Dialog(onDismissRequest = { showIndex = false; showFavorites = false }) {
@@ -230,7 +247,9 @@ private fun RoundControl(symbol: String, label: String, onClick: () -> Unit, ena
             shadowElevation = 5.dp, modifier = Modifier.size(if (large) 66.dp else 48.dp)) {
             Box(contentAlignment = Alignment.Center) { Text(symbol, fontSize = if (large) 29.sp else 19.sp, fontWeight = FontWeight.Bold) }
         }
-        Text(label, color = Color.White, fontSize = 9.sp, textAlign = TextAlign.Center, lineHeight = 11.sp, maxLines = 2)
+        Text(label, color = DeepGreen, fontSize = 9.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center,
+            lineHeight = 11.sp, maxLines = 2, modifier = Modifier.padding(top = 2.dp)
+                .background(Color(0xDDF5E8C6), RoundedCornerShape(5.dp)).padding(horizontal = 3.dp, vertical = 2.dp))
     }
 }
 
@@ -240,7 +259,7 @@ private fun ActionButton(label: String, symbol: String, modifier: Modifier = Mod
         shape = RoundedCornerShape(14.dp), border = androidx.compose.foundation.BorderStroke(1.5.dp, Gold),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = SoftGold, containerColor = Color(0xEE063A2B)),
         contentPadding = PaddingValues(horizontal = 4.dp)) {
-        Text(symbol, color = Gold, fontSize = 18.sp); Spacer(Modifier.width(4.dp)); Text(label, fontSize = 11.sp, maxLines = 1)
+        Text(symbol, color = Gold, fontSize = 18.sp); Spacer(Modifier.width(4.dp)); Text(label, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
     }
 }
 
