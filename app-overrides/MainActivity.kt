@@ -279,7 +279,7 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String?
                         Text(timeText(duration), color = Color.White, fontSize = 12.sp)
                     }
                 }
-                Row(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * (if (isLandscape) 0.605f else 0.665f)).fillMaxWidth(controlsRowWidth),
+                Row(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * (if (isLandscape) 0.565f else 0.665f)).fillMaxWidth(controlsRowWidth),
                     horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                     RoundControl("⏪", "15 ثانية\nرجوع", { player?.seekTo((player.currentPosition - 15000L).coerceAtLeast(0L)) }, player != null)
                     RoundControl("|◀", "السابق", { player?.seekToPreviousMediaItem() }, player?.hasPreviousMediaItem() == true)
@@ -288,18 +288,12 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String?
                     RoundControl("▶|", "التالي", { player?.seekToNextMediaItem() }, player?.hasNextMediaItem() == true)
                     RoundControl("⏩", "15 ثانية\nتقديم", { player?.seekTo((player.currentPosition + 15000L).coerceAtMost(duration.takeIf { it > 0 } ?: Long.MAX_VALUE)) }, player != null)
                 }
-                Row(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * (if (isLandscape) 0.765f else 0.785f)).fillMaxWidth(0.90f),
+                Row(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * (if (isLandscape) 0.815f else 0.785f)).fillMaxWidth(0.90f),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     ActionButton("المفضلة", "★", Modifier.weight(1f), compact = isLandscape) { showFavorites = true }
                     ActionButton("تحديث", "↓", Modifier.weight(1f), enabled = !loading, compact = isLandscape, onClick = onRefresh)
                     ActionButton("الفهرس", "☷", Modifier.weight(1f), compact = isLandscape) { showIndex = true }
                 }
-                // Keep the dedication printed in the background; add only the donor name beneath it.
-                Text("الفقير إلى الله / محمد فريج البلوي", color = Color(0xFFD8C58C),
-                    fontSize = 5.sp, textAlign = TextAlign.Center, maxLines = 1,
-                    modifier = Modifier.align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .padding(bottom = 1.dp))
                 if (message != null) Text(message, color = SoftGold, fontSize = 10.sp, textAlign = TextAlign.Center,
                     modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 48.dp)
                         .background(DeepGreen, RoundedCornerShape(8.dp)).padding(horizontal = 9.dp, vertical = 6.dp))
