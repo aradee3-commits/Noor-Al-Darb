@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -127,6 +128,43 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String?
     var showFavorites by remember { mutableStateOf(false) }
     val favorites = remember { mutableStateListOf<String>() }
     val backgroundImage = ImageBitmap.imageResource(R.drawable.app_background)
+    val context = LocalContext.current
+    var resumeRestored by remember { mutableStateOf(false) }
+
+    // Restore the last episode and exact playback position after reopening the app.
+    LaunchedEffect(player, episodes) {
+        if (player != null && episodes.isNotEmpty() && !resumeRestored) {
+            val prefs = context.getSharedPreferences("noor_playback_resume", android.content.Context.MODE_PRIVATE)
+            val savedId = prefs.getString("episode_id", null)
+            val savedIndex = episodes.indexOfFirst { it.id == savedId }
+            val index = if (savedIndex >= 0) savedIndex else 0
+            val savedPosition = if (savedIndex >= 0) prefs.getLong("position_ms", 0L).coerceAtLeast(0L) else 0L
+            val playlist = episodes.map { item ->
+                MediaItem.Builder().setMediaId(item.id).setUri(item.audioUrl)
+                    .setMediaMetadata(androidx.media3.common.MediaMetadata.Builder().setTitle(item.title).build()).build()
+            }
+            player.setMediaItems(playlist, index, savedPosition)
+            player.prepare()
+            player.play()
+            selected = episodes[index]
+            resumeRestored = true
+        }
+    }
+
+    // Persist the current item and position continuously, not just when the screen closes.
+    LaunchedEffect(player) {
+        while (true) {
+            val current = player
+            val id = current?.currentMediaItem?.mediaId
+            if (current != null && id != null) {
+                context.getSharedPreferences("noor_playback_resume", android.content.Context.MODE_PRIVATE)
+                    .edit().putString("episode_id", id)
+                    .putLong("position_ms", current.currentPosition.coerceAtLeast(0L)).apply()
+            }
+            delay(1000)
+        }
+    }
+
     LaunchedEffect(message) { if (message != null) { delay(2600); onStatusExpired() } }
 
     LaunchedEffect(Unit) { if (episodes.size <= 2) onRefresh() }
@@ -147,19 +185,15 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String?
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             BoxWithConstraints(Modifier.fillMaxSize().background(DeepGreen)) {
                 Canvas(Modifier.fillMaxSize()) {
-                    // Portrait composition: keep the complete heading visible on phone screens.
-                    val w = size.width.toInt().coerceAtLeast(1)
-                    val topH = (size.height * 0.215f).toInt()
-                    val footerY = (size.height * 0.91f).toInt()
+                    // Draw the approved artwork as one intact image: no arbitrary source crops
+                    // and no independent horizontal/vertical stretching of the title or frame.
                     drawRect(Color(0xFFFFF2D2))
-                    drawImage(backgroundImage, srcOffset = IntOffset(360, 0), srcSize = IntSize(950, 292),
-                        dstOffset = IntOffset(0, 0), dstSize = IntSize(w, topH))
-                    drawImage(backgroundImage, srcOffset = IntOffset(430, 275), srcSize = IntSize(810, 485),
-                        dstOffset = IntOffset(0, topH), dstSize = IntSize(w, (footerY - topH).coerceAtLeast(1)))
-                    drawRect(DeepGreen, topLeft = androidx.compose.ui.geometry.Offset(0f, footerY.toFloat()),
-                        size = androidx.compose.ui.geometry.Size(size.width, size.height - footerY))
-                    drawLine(Gold, androidx.compose.ui.geometry.Offset(0f, footerY.toFloat()),
-                        androidx.compose.ui.geometry.Offset(size.width, footerY.toFloat()), strokeWidth = 3.dp.toPx())
+                    val scale = minOf(size.width / backgroundImage.width, size.height / backgroundImage.height)
+                    val dstW = (backgroundImage.width * scale).toInt().coerceAtLeast(1)
+                    val dstH = (backgroundImage.height * scale).toInt().coerceAtLeast(1)
+                    val left = ((size.width - dstW) / 2f).toInt()
+                    val top = ((size.height - dstH) / 2f).toInt()
+                    drawImage(backgroundImage, dstOffset = IntOffset(left, top), dstSize = IntSize(dstW, dstH))
                 }
                 Column(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * 0.435f)
                     .fillMaxWidth(0.90f).background(Color(0xEE063A2B), RoundedCornerShape(14.dp))
