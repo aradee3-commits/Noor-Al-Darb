@@ -111,6 +111,17 @@ class MainActivity : ComponentActivity() {
         }
     } catch (_: Exception) { emptyList() }
 
+    override fun onStop() {
+        // Save immediately when the app leaves the foreground, in addition to periodic saving.
+        controller?.currentMediaItem?.mediaId?.let { id ->
+            getSharedPreferences("noor_playback_resume", MODE_PRIVATE).edit()
+                .putString("episode_id", id)
+                .putLong("position_ms", controller?.currentPosition?.coerceAtLeast(0L) ?: 0L)
+                .apply()
+        }
+        super.onStop()
+    }
+
     override fun onDestroy() {
         controllerFuture?.let { MediaController.releaseFuture(it) }
         controller = null; playerState.value = null
@@ -163,7 +174,7 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String?
                     .edit().putString("episode_id", id)
                     .putLong("position_ms", current.currentPosition.coerceAtLeast(0L)).apply()
             }
-            delay(1000)
+            delay(500)
         }
     }
 
@@ -276,14 +287,14 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String?
 
 @Composable
 private fun RoundControl(symbol: String, label: String, onClick: () -> Unit, enabled: Boolean, large: Boolean = false) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(if (large) 68.dp else 54.dp)) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(if (large) 74.dp else 64.dp)) {
         Surface(onClick = onClick, enabled = enabled, shape = CircleShape,
             color = if (large) Color(0xFF0A573C) else Color(0xFF075039), contentColor = SoftGold,
             border = androidx.compose.foundation.BorderStroke(if (large) 3.dp else 2.dp, Gold),
-            shadowElevation = 5.dp, modifier = Modifier.size(if (large) 66.dp else 48.dp)) {
-            Box(contentAlignment = Alignment.Center) { Text(symbol, fontSize = if (large) 29.sp else 19.sp, fontWeight = FontWeight.Bold) }
+            shadowElevation = 5.dp, modifier = Modifier.size(if (large) 78.dp else 60.dp)) {
+            Box(contentAlignment = Alignment.Center) { Text(symbol, fontSize = if (large) 36.sp else 25.sp, fontWeight = FontWeight.Bold) }
         }
-        Text(label, color = DeepGreen, fontSize = 9.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center,
+        Text(label, color = DeepGreen, fontSize = 10.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
             lineHeight = 11.sp, maxLines = 2, modifier = Modifier.padding(top = 2.dp)
                 .background(Color(0xDDF5E8C6), RoundedCornerShape(5.dp)).padding(horizontal = 3.dp, vertical = 2.dp))
     }
@@ -291,11 +302,11 @@ private fun RoundControl(symbol: String, label: String, onClick: () -> Unit, ena
 
 @Composable
 private fun ActionButton(label: String, symbol: String, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
-    OutlinedButton(onClick = onClick, enabled = enabled, modifier = modifier.height(44.dp),
+    OutlinedButton(onClick = onClick, enabled = enabled, modifier = modifier.height(54.dp),
         shape = RoundedCornerShape(14.dp), border = androidx.compose.foundation.BorderStroke(1.5.dp, Gold),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = SoftGold, containerColor = Color(0xEE063A2B)),
         contentPadding = PaddingValues(horizontal = 4.dp)) {
-        Text(symbol, color = Gold, fontSize = 18.sp); Spacer(Modifier.width(4.dp)); Text(label, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+        Text(symbol, color = Gold, fontSize = 23.sp); Spacer(Modifier.width(5.dp)); Text(label, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
     }
 }
 
