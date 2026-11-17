@@ -259,14 +259,14 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String?
                     val top = ((size.height - dstH) / 2f).toInt()
                     drawImage(backgroundImage, dstOffset = IntOffset(left, top), dstSize = IntSize(dstW, dstH))
                 }
-                Column(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * 0.435f)
+                Column(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * (if (isLandscape) 0.375f else 0.435f))
                     .fillMaxWidth(playerPanelWidth).background(Color(0xEE063A2B), RoundedCornerShape(14.dp))
                     .padding(horizontal = 10.dp, vertical = 5.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(selected?.title ?: "اختر حلقة من الفهرس", color = SoftGold, fontSize = 18.sp,
                         fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, maxLines = 2)
                     if (loading) Text("جارٍ تحديث الفهرس...", color = Color.White, fontSize = 10.sp)
                 }
-                Column(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * 0.545f)
+                Column(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * (if (isLandscape) 0.485f else 0.545f))
                     .fillMaxWidth(playerPanelWidth).background(Color(0xEE063A2B), RoundedCornerShape(18.dp))
                     .padding(horizontal = 16.dp, vertical = 7.dp)) {
                     Slider(value = slider.coerceIn(0f, duration.coerceAtLeast(1L).toFloat()),
@@ -279,7 +279,7 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String?
                         Text(timeText(duration), color = Color.White, fontSize = 12.sp)
                     }
                 }
-                Row(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * 0.665f).fillMaxWidth(controlsRowWidth),
+                Row(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * (if (isLandscape) 0.595f else 0.665f)).fillMaxWidth(controlsRowWidth),
                     horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                     RoundControl("⏪", "15 ثانية\nرجوع", { player?.seekTo((player.currentPosition - 15000L).coerceAtLeast(0L)) }, player != null)
                     RoundControl("|◀", "السابق", { player?.seekToPreviousMediaItem() }, player?.hasPreviousMediaItem() == true)
@@ -288,15 +288,17 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String?
                     RoundControl("▶|", "التالي", { player?.seekToNextMediaItem() }, player?.hasNextMediaItem() == true)
                     RoundControl("⏩", "15 ثانية\nتقديم", { player?.seekTo((player.currentPosition + 15000L).coerceAtMost(duration.takeIf { it > 0 } ?: Long.MAX_VALUE)) }, player != null)
                 }
-                Row(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * 0.785f).fillMaxWidth(0.90f),
+                Row(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * (if (isLandscape) 0.735f else 0.785f)).fillMaxWidth(0.90f),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     ActionButton("المفضلة", "★", Modifier.weight(1f)) { showFavorites = true }
                     ActionButton("تحديث", "↓", Modifier.weight(1f), enabled = !loading, onClick = onRefresh)
                     ActionButton("الفهرس", "☷", Modifier.weight(1f)) { showIndex = true }
                 }
                 // Compact dedication sits below the navigation buttons without covering them.
-                Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth(0.90f)
-                    .padding(bottom = 2.dp)
+                Column(Modifier.align(if (isLandscape) Alignment.TopCenter else Alignment.BottomCenter)
+                    .then(if (isLandscape) Modifier.offset(y = maxHeight * 0.91f) else Modifier)
+                    .fillMaxWidth(0.90f)
+                    .padding(bottom = if (isLandscape) 0.dp else 2.dp)
                     .background(Color(0xE60B3028), RoundedCornerShape(6.dp))
                     .padding(horizontal = 6.dp, vertical = 1.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
