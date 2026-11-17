@@ -83,6 +83,8 @@ class MainActivity : ComponentActivity() {
                     }
                 },
                 onPlay = { episode ->
+                    getSharedPreferences("noor_playback_resume", MODE_PRIVATE).edit()
+                        .putString("episode_id", episode.id).putLong("position_ms", 0L).apply()
                     val activeController = controller
                     if (activeController == null) {
                         Toast.makeText(this@MainActivity, "جارٍ الاتصال بمشغل الصوت، حاول بعد لحظة", Toast.LENGTH_LONG).show()
