@@ -288,22 +288,24 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String?
                     RoundControl("▶|", "التالي", { player?.seekToNextMediaItem() }, player?.hasNextMediaItem() == true)
                     RoundControl("⏩", "15 ثانية\nتقديم", { player?.seekTo((player.currentPosition + 15000L).coerceAtMost(duration.takeIf { it > 0 } ?: Long.MAX_VALUE)) }, player != null)
                 }
-                Row(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * 0.815f).fillMaxWidth(0.90f),
+                Row(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * 0.785f).fillMaxWidth(0.90f),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     ActionButton("المفضلة", "★", Modifier.weight(1f)) { showFavorites = true }
                     ActionButton("تحديث", "↓", Modifier.weight(1f), enabled = !loading, onClick = onRefresh)
                     ActionButton("الفهرس", "☷", Modifier.weight(1f)) { showIndex = true }
                 }
-                // A single opaque footer masks the duplicate wording embedded in the background artwork.
-                Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth(0.76f)
-                    .padding(bottom = 5.dp)
-                    .background(Color(0xF20B3028), RoundedCornerShape(8.dp))
-                    .padding(horizontal = 8.dp, vertical = 3.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally) {
+                // Compact dedication sits below the navigation buttons without covering them.
+                Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth(0.90f)
+                    .padding(bottom = 2.dp)
+                    .background(Color(0xE60B3028), RoundedCornerShape(6.dp))
+                    .padding(horizontal = 6.dp, vertical = 1.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center) {
                     Text("اللهم اجعل هذا العمل صدقة جارية لي ولوالدي ولأهل بيتي", color = SoftGold,
-                        fontSize = 9.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center, maxLines = 1)
+                        fontSize = 7.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center,
+                        maxLines = 1)
                     Text("الفقير إلى الله / محمد فريج البلوي", color = Color(0xFFD8C58C),
-                        fontSize = 5.sp, textAlign = TextAlign.Center, maxLines = 1)
+                        fontSize = 4.sp, textAlign = TextAlign.Center, maxLines = 1)
                 }
                 if (message != null) Text(message, color = SoftGold, fontSize = 10.sp, textAlign = TextAlign.Center,
                     modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 48.dp)
