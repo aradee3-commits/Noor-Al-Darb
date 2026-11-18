@@ -262,100 +262,55 @@ private fun NoorHome(episodes: List<Episode>, loading: Boolean, message: String?
                     val top = ((size.height - dstH) / 2f).toInt()
                     drawImage(backgroundImage, dstOffset = IntOffset(left, top), dstSize = IntSize(dstW, dstH))
                 }
-                if (isPhoneLandscape) {
-                    // Phone landscape: use a true vertical layout instead of absolute offsets.
-                    // Each section receives a measured share of the available height.
-                    Column(
-                        Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 7.dp),
-                        verticalArrangement = Arrangement.spacedBy(5.dp)
-                    ) {
-                        Column(
-                            Modifier.weight(0.15f).fillMaxWidth()
-                                .background(Color(0xEE063A2B), RoundedCornerShape(12.dp))
-                                .padding(horizontal = 10.dp, vertical = 3.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Text(selected?.title ?: "اختر حلقة من الفهرس", color = SoftGold,
-                                fontSize = 14.sp, fontWeight = FontWeight.Bold,
-                                textAlign = TextAlign.Center, maxLines = 1)
-                            if (loading) Text("جارٍ تحديث الفهرس...", color = Color.White, fontSize = 9.sp)
-                        }
-                        Column(
-                            Modifier.weight(0.20f).fillMaxWidth()
-                                .background(Color(0xEE063A2B), RoundedCornerShape(14.dp))
-                                .padding(horizontal = 12.dp, vertical = 2.dp),
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Slider(value = slider.coerceIn(0f, duration.coerceAtLeast(1L).toFloat()),
-                                onValueChange = { dragging = true; slider = it },
-                                onValueChangeFinished = { player?.seekTo(slider.toLong()); dragging = false },
-                                valueRange = 0f..duration.coerceAtLeast(1L).toFloat(), enabled = player != null && duration > 0,
-                                colors = SliderDefaults.colors(thumbColor = SoftGold, activeTrackColor = Gold, inactiveTrackColor = Color.LightGray))
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text(timeText(position), color = Color.White, fontSize = 10.sp)
-                                Text(timeText(duration), color = Color.White, fontSize = 10.sp)
-                            }
-                        }
-                        Row(
-                            Modifier.weight(0.43f).fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RoundControl("⏪", "15 ثانية رجوع", { player?.seekTo((player.currentPosition - 15000L).coerceAtLeast(0L)) }, player != null, compact = true)
-                            RoundControl("|◀", "السابق", { player?.seekToPreviousMediaItem() }, player?.hasPreviousMediaItem() == true, compact = true)
-                            RoundControl(if (playing) "Ⅱ" else "▶", if (playing) "إيقاف" else "تشغيل",
-                                { player?.let { if (it.isPlaying) it.pause() else it.play() } }, player != null, true, compact = true)
-                            RoundControl("▶|", "التالي", { player?.seekToNextMediaItem() }, player?.hasNextMediaItem() == true, compact = true)
-                            RoundControl("⏩", "15 ثانية تقديم", { player?.seekTo((player.currentPosition + 15000L).coerceAtMost(duration.takeIf { it > 0 } ?: Long.MAX_VALUE)) }, player != null, compact = true)
-                        }
-                        Row(
-                            Modifier.weight(0.16f).fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            ActionButton("المفضلة", "★", Modifier.weight(1f).fillMaxHeight(), compact = true) { showFavorites = true }
-                            ActionButton("تحديث", "↓", Modifier.weight(1f).fillMaxHeight(), enabled = !loading, compact = true, onClick = onRefresh)
-                            ActionButton("الفهرس", "☷", Modifier.weight(1f).fillMaxHeight(), compact = true) { showIndex = true }
-                        }
+                // Restore the original framed, layered player layout on landscape screens.
+                Column(Modifier.align(Alignment.TopCenter)
+                    .offset(y = maxHeight * (if (isLandscape) 0.405f else 0.435f))
+                    .fillMaxWidth(if (isPhoneLandscape) 0.84f else playerPanelWidth)
+                    .background(Color(0xEE063A2B), RoundedCornerShape(14.dp))
+                    .padding(horizontal = 10.dp, vertical = 5.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(selected?.title ?: "اختر حلقة من الفهرس", color = SoftGold,
+                        fontSize = if (isPhoneLandscape) 14.sp else 18.sp,
+                        fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, maxLines = 1)
+                    if (loading) Text("جارٍ تحديث الفهرس...", color = Color.White, fontSize = 10.sp)
+                }
+                Column(Modifier.align(Alignment.TopCenter)
+                    .offset(y = maxHeight * (if (isLandscape) 0.505f else 0.545f))
+                    .fillMaxWidth(if (isPhoneLandscape) 0.76f else playerPanelWidth)
+                    .background(Color(0xEE063A2B), RoundedCornerShape(16.dp))
+                    .padding(horizontal = 12.dp, vertical = 1.dp)) {
+                    Slider(
+                        modifier = Modifier.fillMaxWidth().height(if (isPhoneLandscape) 30.dp else 42.dp),
+                        value = slider.coerceIn(0f, duration.coerceAtLeast(1L).toFloat()),
+                        onValueChange = { dragging = true; slider = it },
+                        onValueChangeFinished = { player?.seekTo(slider.toLong()); dragging = false },
+                        valueRange = 0f..duration.coerceAtLeast(1L).toFloat(),
+                        enabled = player != null && duration > 0,
+                        colors = SliderDefaults.colors(thumbColor = SoftGold, activeTrackColor = Gold, inactiveTrackColor = Color.LightGray)
+                    )
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(timeText(position), color = Color.White, fontSize = if (isPhoneLandscape) 10.sp else 12.sp)
+                        Text(timeText(duration), color = Color.White, fontSize = if (isPhoneLandscape) 10.sp else 12.sp)
                     }
-                } else {
-                    Column(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * (when { isPhoneLandscape -> 0.07f; isLandscape -> 0.405f; else -> 0.435f }))
-                        .fillMaxWidth(playerPanelWidth).background(Color(0xEE063A2B), RoundedCornerShape(14.dp))
-                        .padding(horizontal = 10.dp, vertical = 5.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(selected?.title ?: "اختر حلقة من الفهرس", color = SoftGold, fontSize = if (isPhoneLandscape) 14.sp else 18.sp,
-                            fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, maxLines = 2)
-                        if (loading) Text("جارٍ تحديث الفهرس...", color = Color.White, fontSize = 10.sp)
-                    }
-                    Column(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * (when { isPhoneLandscape -> 0.22f; isLandscape -> 0.505f; else -> 0.545f }))
-                        .fillMaxWidth(playerPanelWidth).background(Color(0xEE063A2B), RoundedCornerShape(18.dp))
-                        .padding(horizontal = 16.dp, vertical = 7.dp)) {
-                        Slider(value = slider.coerceIn(0f, duration.coerceAtLeast(1L).toFloat()),
-                            onValueChange = { dragging = true; slider = it },
-                            onValueChangeFinished = { player?.seekTo(slider.toLong()); dragging = false },
-                            valueRange = 0f..duration.coerceAtLeast(1L).toFloat(), enabled = player != null && duration > 0,
-                            colors = SliderDefaults.colors(thumbColor = SoftGold, activeTrackColor = Gold, inactiveTrackColor = Color.LightGray))
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(timeText(position), color = Color.White, fontSize = 12.sp)
-                            Text(timeText(duration), color = Color.White, fontSize = 12.sp)
-                        }
-                    }
-                    Row(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * (when { isPhoneLandscape -> 0.49f; isLandscape -> 0.565f; else -> 0.665f })).fillMaxWidth(controlsRowWidth),
-                        horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
-                        RoundControl("⏪", "15 ثانية\nرجوع", { player?.seekTo((player.currentPosition - 15000L).coerceAtLeast(0L)) }, player != null, compact = isPhoneLandscape)
-                        RoundControl("|◀", "السابق", { player?.seekToPreviousMediaItem() }, player?.hasPreviousMediaItem() == true, compact = isPhoneLandscape)
-                        RoundControl(if (playing) "Ⅱ" else "▶", if (playing) "إيقاف" else "تشغيل",
-                            { player?.let { if (it.isPlaying) it.pause() else it.play() } }, player != null, true, compact = isPhoneLandscape)
-                        RoundControl("▶|", "التالي", { player?.seekToNextMediaItem() }, player?.hasNextMediaItem() == true, compact = isPhoneLandscape)
-                        RoundControl("⏩", "15 ثانية\nتقديم", { player?.seekTo((player.currentPosition + 15000L).coerceAtMost(duration.takeIf { it > 0 } ?: Long.MAX_VALUE)) }, player != null, compact = isPhoneLandscape)
-                    }
-                    Row(Modifier.align(Alignment.TopCenter).offset(y = maxHeight * (when { isPhoneLandscape -> 0.82f; isLandscape -> 0.815f; else -> 0.785f })).fillMaxWidth(if (isPhoneLandscape) 0.96f else 0.90f),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        ActionButton("المفضلة", "★", Modifier.weight(1f), compact = isLandscape) { showFavorites = true }
-                        ActionButton("تحديث", "↓", Modifier.weight(1f), enabled = !loading, compact = isLandscape, onClick = onRefresh)
-                        ActionButton("الفهرس", "☷", Modifier.weight(1f), compact = isLandscape) { showIndex = true }
-                    }
-    
+                }
+                Row(Modifier.align(Alignment.TopCenter)
+                    .offset(y = maxHeight * (if (isLandscape) 0.565f else 0.665f))
+                    .fillMaxWidth(if (isPhoneLandscape) 0.88f else controlsRowWidth),
+                    horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+                    RoundControl("⏪", "15 ثانية\nرجوع", { player?.seekTo((player.currentPosition - 15000L).coerceAtLeast(0L)) }, player != null, compact = isLandscape)
+                    RoundControl("|◀", "السابق", { player?.seekToPreviousMediaItem() }, player?.hasPreviousMediaItem() == true, compact = isLandscape)
+                    RoundControl(if (playing) "Ⅱ" else "▶", if (playing) "إيقاف" else "تشغيل",
+                        { player?.let { if (it.isPlaying) it.pause() else it.play() } }, player != null, true, compact = isLandscape)
+                    RoundControl("▶|", "التالي", { player?.seekToNextMediaItem() }, player?.hasNextMediaItem() == true, compact = isLandscape)
+                    RoundControl("⏩", "15 ثانية\nتقديم", { player?.seekTo((player.currentPosition + 15000L).coerceAtMost(duration.takeIf { it > 0 } ?: Long.MAX_VALUE)) }, player != null, compact = isLandscape)
+                }
+                Row(Modifier.align(Alignment.TopCenter)
+                    .offset(y = maxHeight * (if (isLandscape) 0.815f else 0.785f))
+                    .fillMaxWidth(if (isPhoneLandscape) 0.90f else 0.90f),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    ActionButton("المفضلة", "★", Modifier.weight(1f), compact = isLandscape) { showFavorites = true }
+                    ActionButton("تحديث", "↓", Modifier.weight(1f), enabled = !loading, compact = isLandscape, onClick = onRefresh)
+                    ActionButton("الفهرس", "☷", Modifier.weight(1f), compact = isLandscape) { showIndex = true }
                 }
                 if (message != null) Text(message, color = SoftGold, fontSize = 10.sp, textAlign = TextAlign.Center,
                     modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 48.dp)
